@@ -1,5 +1,5 @@
 # Point Cloud Computing -- ECE 408
-# Author: Harris Mohamed 
+# Author: Harris Mohamed
 
 import sys
 import os
@@ -10,11 +10,31 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 # 408 CODE BEGINS HERE. Above lines are for grabbing the AWS data, which won't work for you.
-# TODO: Loop through coordinate.txt and add it to actual_coordinates. The code below is 
+# TODO: Loop through coordinate.txt and add it to actual_coordinates. The code below is
 # expecting a list of lists, like [[x0, y0, z0], [x1, y1, z2], ....]
 actual_coordinates = []
 
-# Helper function to find distance between points 
+# file parsing helper function which takes a file path and places it into
+# the actual_coordinates list
+def fileParser(filepath, actual_coordinates):
+    if not os.path.isfile(filepath):
+        print("File path {} does not exist. Exiting...".format(filepath))
+        sys.exit()
+    with open(filepath, 'r') as fp:
+        for line in fp:
+            row = line.split()
+            actual_coordinates.append(row)
+    fp.close()
+
+fileParser('coordinates.txt', actual_coordinates)
+actual_coordinates = [[float(float(j)) for j in i] for i in actual_coordinates]
+
+# commented code line below was used as quick check to make sure coordinates
+# formatted into list correctly
+
+# print(actual_coordinates)
+
+# Helper function to find distance between points
 def distPoints(p0, p1):
     return (np.sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[1])**2 + (p0[2] - p1[2])**2))
 
@@ -23,7 +43,7 @@ points_dict = {}
 nearest_neighbors = {}
 
 count = 0
-# Loop through all points, compute normal vector for each cluster of points 
+# Loop through all points, compute normal vector for each cluster of points
 for coordinate in actual_coordinates:
     # Explore the nearest n neighbors. Doing this without any optimizations as of now.
     # if count == 10:   # There are 24,330 points in the file. Takes my computer a little over a minute to compute for all of them. Use this to test on smaller number of points
@@ -39,7 +59,7 @@ for coordinate in actual_coordinates:
     mod_list.remove(coordinate)
     for point in mod_list:
         heapq.heappush(n_points, (distPoints(coordinate, point), point))
-    
+
     # Find the nearest 10 points. Not optimized at all.
     for i in range(POINTS_TO_EXPLORE):
         curr_point = heapq.heappop(n_points)[1]
@@ -49,18 +69,18 @@ for coordinate in actual_coordinates:
         actual_z.append(curr_point[2])
 
         actual_coordinates.remove(curr_point)
-    
-    # Find the plane classifying the 10 points 
+
+    # Find the plane classifying the 10 points
     tmp_A = []
     tmp_B = []
     for i in range(POINTS_TO_EXPLORE):
         tmp_A.append([actual_x[i], actual_y[i], 1])
         tmp_B.append(actual_z[i])
-    b = np.matrix(tmp_B).T 
+    b = np.matrix(tmp_B).T
     A = np.matrix(tmp_A)
     fit = (A.T * A).I * A.T * b
 
-    # fit is the numpy matrix holding the plane parameters. fit[0,0] is A, fit[1,0] is B, fit[2,0] is C in the equation Ax + By + Cz = D. 
+    # fit is the numpy matrix holding the plane parameters. fit[0,0] is A, fit[1,0] is B, fit[2,0] is C in the equation Ax + By + Cz = D.
     mag = np.sqrt(fit[0,0]**2 + fit[1,0]**2 + fit[2,0]**2)
     nearest_neighbors[str(coordinate)] = actual_points
 
@@ -82,7 +102,7 @@ for key, value in points_dict.items():
     if len(features) == 0:
         empty.append(0)
         empty.append(value)
-        features[num_features] = empty 
+        features[num_features] = empty
     else:
         for k, v in features.items():
             angle_compare = v[0]
@@ -95,9 +115,9 @@ for key, value in points_dict.items():
         # print("Current plane: ", value)
         angle = np.degrees(np.arccos(curr[0]*value[0] + curr[1]*value[1] + curr[2]*value[2]))
         print(angle)
-    
-    
-# Left these comments in, they can be used to visualize the outputs. 
+
+
+# Left these comments in, they can be used to visualize the outputs.
 # print(type(fit))
 # print(fit)
 # errors = b - A * fit
@@ -105,7 +125,7 @@ for key, value in points_dict.items():
 
 # plt.figure()
 # ax = plt.subplot(111, projection='3d')
-# ax.scatter(actual_x, actual_y, actual_z, color='b') 
+# ax.scatter(actual_x, actual_y, actual_z, color='b')
 
 # xlim = ax.get_xlim()
 # ylim = ax.get_ylim()
@@ -125,7 +145,7 @@ for key, value in points_dict.items():
 # break
 # # plt.figure()
 # # ax = plt.subplot(111, projection='3d')
-# # ax.scatter(actual_x, actual_y, actual_z, color='b') 
+# # ax.scatter(actual_x, actual_y, actual_z, color='b')
 
 # xlim = ax.get_xlim()
 # ylim = ax.get_ylim()
@@ -141,4 +161,3 @@ for key, value in points_dict.items():
 # # ax.set_ylabel('y')
 # # ax.set_zlabel('z')
 # # plt.show()
-    
